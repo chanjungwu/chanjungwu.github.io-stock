@@ -21,7 +21,7 @@
     padding: 5px;
     margin-right: 5px;
   }
-  #add-btn, #add-category-btn, #delete-category-btn, #weekly-btn, #daily-btn, #hourly-btn, #delete-duplicates-btn, #paste-btn {
+  #add-btn, #add-category-btn, #delete-category-btn, #weekly-btn, #daily-btn, #four-hour-btn, #three-hour-btn, #hourly-btn, #monthly-btn, #delete-duplicates-btn, #paste-btn {
     padding: 5px 10px;
     background-color: #4CAF50;
     color: white;
@@ -129,8 +129,11 @@
     <button id="delete-category-btn">刪除分類</button>
     <input type="text" id="stock-input" placeholder="股票代號">
     <button id="add-btn">新增到列表</button>
+    <button id="monthly-btn">一月</button>
     <button id="weekly-btn">一週</button>
     <button id="daily-btn">一日</button>
+    <button id="four-hour-btn">四小時</button>
+    <button id="three-hour-btn">三小時</button>
     <button id="hourly-btn">一小時</button>
     <button id="delete-duplicates-btn">刪除重複對象</button>
     <button id="paste-btn">貼入</button>
@@ -431,7 +434,10 @@
 
     document.getElementById('weekly-btn').addEventListener('click', () => switchTimeframe('W'));
     document.getElementById('daily-btn').addEventListener('click', () => switchTimeframe('D'));
+    document.getElementById('four-hour-btn').addEventListener('click', () => switchTimeframe('240'));
+    document.getElementById('three-hour-btn').addEventListener('click', () => switchTimeframe('180'));
     document.getElementById('hourly-btn').addEventListener('click', () => switchTimeframe('60'));
+    document.getElementById('monthly-btn').addEventListener('click', () => switchTimeframe('1M'));
 
     const pasteBtn = document.getElementById('paste-btn');
     const pasteModal = document.getElementById('paste-modal');
