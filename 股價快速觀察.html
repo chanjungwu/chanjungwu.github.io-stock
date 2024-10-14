@@ -21,13 +21,26 @@
     padding: 5px;
     margin-right: 5px;
   }
-  #add-btn, #add-category-btn, #delete-category-btn, #weekly-btn, #daily-btn, #four-hour-btn, #three-hour-btn, #hourly-btn, #monthly-btn, #delete-duplicates-btn, #paste-btn {
+  #stock-input {
+    width: 120px;
+  }
+  #new-category-input {
+    width: 150px;
+  }
+  #add-btn, #add-category-btn, #delete-category-btn, #weekly-btn, #daily-btn, #four-hour-btn, #three-hour-btn, #hourly-btn, #monthly-btn, #delete-duplicates-btn, #paste-btn, #macd-btn, #rsi-btn, #clear-indicators-btn {
     padding: 5px 10px;
     background-color: #4CAF50;
     color: white;
     border: none;
     cursor: pointer;
     margin-right: 5px;
+  }
+  #macd-btn, #rsi-btn {
+    background-color: pink;
+  }
+  #clear-indicators-btn {
+    background-color: #ff4444;
+    color: white;
   }
   #main-container {
     display: flex;
@@ -137,6 +150,9 @@
     <button id="hourly-btn">一小時</button>
     <button id="delete-duplicates-btn">刪除重複對象</button>
     <button id="paste-btn">貼入</button>
+    <button id="macd-btn" style="background-color: pink;">MACD</button>
+    <button id="rsi-btn" style="background-color: pink;">RSI</button>
+    <button id="clear-indicators-btn" style="background-color: #ff4444;">清除指標</button>
   </div>
   <div id="main-container">
     <div id="watchlist">
@@ -160,8 +176,13 @@
     let selectedStocks = [];
     let widgets = {};
     let currentTimeframe = "W";
+    let macdEnabled = false;
+    let rsiEnabled = false;
 
     function createWidget(container, symbol, interval) {
+      const studies = [];
+      if (macdEnabled) studies.push("MACD@tv-basicstudies");
+      if (rsiEnabled) studies.push("RSI@tv-basicstudies");
       return new TradingView.widget({
         "width": "100%",
         "height": "100%",
@@ -176,8 +197,8 @@
         "hide_side_toolbar": false,
         "allow_symbol_change": true,
         "container_id": container,
-        "studies": [],
-        "disabled_features": ["volume_force_overlay"],
+        "studies": studies,
+        "disabled_features": ["volume_force_overlay", "create_volume_indicator_by_default"],
         "enabled_features": ["use_localstorage_for_settings", "hide_left_toolbar_by_default"],
         "overrides": {
           "mainSeriesProperties.showCountdown": true,
@@ -190,23 +211,21 @@
           "timeScale.barSpacing": 64,
           "paneProperties.topMargin": 5,
           "paneProperties.bottomMargin": 5,
-          "volumePaneSize": "medium",
           "paneProperties.background": "#131722",
           "paneProperties.vertGridProperties.color": "#363c4e",
           "paneProperties.horzGridProperties.color": "#363c4e",
-          "scalesProperties.textColor": "#9db2bd"
+          "scalesProperties.textColor": "#9db2bd",
+          "mainSeriesProperties.priceAxisProperties.autoScale": true,
+          "mainSeriesProperties.candleStyle.upColor": "#26a69a",
+          "mainSeriesProperties.candleStyle.downColor": "#ef5350",
+          "mainSeriesProperties.candleStyle.drawWick": true,
+          "mainSeriesProperties.candleStyle.drawBorder": true,
+          "mainSeriesProperties.candleStyle.borderUpColor": "#26a69a",
+          "mainSeriesProperties.candleStyle.borderDownColor": "#ef5350",
+          "mainSeriesProperties.candleStyle.wickUpColor": "#26a69a",
+          "mainSeriesProperties.candleStyle.wickDownColor": "#ef5350"
         },
-        "studies_overrides": {
-          "volume.volume.color.0": "#00FFFF",
-          "volume.volume.color.1": "#0000FF",
-          "volume.volume.transparency": 70,
-          "volume.show ma": false,
-          "volume.volume ma.color": "#9B72CF",
-          "volume.volume ma.transparency": 30,
-          "volume.volume ma.linewidth": 1,
-          "volume.show macd": false,
-          "volume.macd.color": "#FF0000"
-        },
+        "studies_overrides": {},
         "loading_screen": { "backgroundColor": "#ffffff" },
         "drawings_access": { "type": "black", "tools": [ { "name": "Regression Trend" } ] },
         "saved_data": { "chartproperties": { "volume_enabled": false } },
@@ -390,6 +409,22 @@
       updateCharts();
     }
 
+    function toggleMACD() {
+      macdEnabled = !macdEnabled;
+      updateCharts();
+    }
+
+    function toggleRSI() {
+      rsiEnabled = !rsiEnabled;
+      updateCharts();
+    }
+
+    function clearIndicators() {
+      macdEnabled = false;
+      rsiEnabled = false;
+      updateCharts();
+    }
+
     document.getElementById('add-btn').addEventListener('click', function() {
       const symbol = document.getElementById('stock-input').value.trim().toUpperCase();
       if (symbol && !categories[currentCategory].includes(symbol)) {
@@ -472,6 +507,10 @@
       stockSymbolsInput.value = '';
       pasteModal.style.display = 'none';
     });
+
+    document.getElementById('macd-btn').addEventListener('click', toggleMACD);
+    document.getElementById('rsi-btn').addEventListener('click', toggleRSI);
+    document.getElementById('clear-indicators-btn').addEventListener('click', clearIndicators);
 
     window.onclick = (event) => {
       if (event.target == pasteModal) {
