@@ -547,7 +547,7 @@ function setAlertPrice(symbol, price, type) {
     alertSettings[symbol] = { 
       price: parseFloat(price), 
       type: type,
-      times: selectedTimes,
+      times: selectedTimes.length > 0 ? selectedTimes : ['every_minute'],
       limitPrice: limitPrice ? parseFloat(limitPrice) : null,
       stopLossPrice: stopLossPrice ? parseFloat(stopLossPrice) : null,
       shares: shares ? parseInt(shares) : null,
@@ -592,19 +592,22 @@ function checkAlertCondition(symbol, currentPrice) {
     shouldAlert = true;
   }
 
-  const isDesignatedTime = alert.times.includes(currentMinute.toString().padStart(2, '0')) || 
+  const isDesignatedTime = alert.times.includes('every_minute') || 
+                           alert.times.includes(currentMinute.toString().padStart(2, '0')) || 
                            (alert.times.includes('day') && currentHour === 21 && currentMinute === 30);
 
-  if (shouldAlert && !sentNotifications[symbol] && currentMinute % 5 === 0) {
+  if (shouldAlert && !sentNotifications[symbol]) {
     if (alert.initialTimeCheck && !initialAlertCheck[symbol]) {
       if (isDesignatedTime) {
         showNotification(symbol, currentPrice, alert.type, alert.price);
         sentNotifications[symbol] = true;
         initialAlertCheck[symbol] = true;
+        saveAlertSettingsToStorage();
       }
     } else if (isDesignatedTime) {
       showNotification(symbol, currentPrice, alert.type, alert.price);
-      sentNotifications[symbol] = true;
+      sentNotifications[symbol] = alert.times.includes('every_minute') ? false : true;
+      saveAlertSettingsToStorage();
     }
   }
 
@@ -621,6 +624,21 @@ function showNotification(symbol, currentPrice, alertType, alertPrice) {
       window.focus();
       this.close();
     };
+  } else {
+    console.log("Notification permission not granted. Requesting permission...");
+    requestNotificationPermission();
+  }
+}
+
+function requestNotificationPermission() {
+  if ("Notification" in window) {
+    Notification.requestPermission().then(function (permission) {
+      if (permission === "granted") {
+        console.log("Notification permission granted.");
+      } else {
+        console.log("Notification permission denied.");
+      }
+    });
   }
 }
 
@@ -635,6 +653,9 @@ function showError(message) {
 function updateRefreshSchedule() {
   refreshIntervals.forEach(clearInterval);
   refreshIntervals = [];
+
+  const oneMinuteInterval = setInterval(checkAllAlerts, 60 * 1000);
+  refreshIntervals.push(oneMinuteInterval);
 
   const now = new Date();
   const secondsUntilNextFiveMinutes = (5 - (now.getMinutes() % 5)) * 60 - now.getSeconds();
@@ -666,8 +687,14 @@ function updateActiveAlerts() {
 
   for (const [symbol, alert] of Object.entries(alertSettings)) {
     const li = document.createElement('li');
-    const times = alert.times.includes('day') ? [...alert.times.filter(t => t !== 'day'), '21:30'] : alert.times;
-    li.textContent = `${symbol}: ${alert.type === 'high' ? '高於' : '低於'} $${alert.price} (${times.join(', ')}分)`;
+    let timesText;
+    if (alert.times.includes('every_minute')) {
+      timesText = '每分鐘';
+    } else {
+      const times = alert.times.includes('day') ? [...alert.times.filter(t => t !== 'day'), '21:30'] : alert.times;
+      timesText = `${times.join(', ')}分`;
+    }
+    li.textContent = `${symbol}: ${alert.type === 'high' ? '高於' : '低於'} $${alert.price} (${timesText})`;
     if (alert.initialTimeCheck) {
       li.textContent += ' (初次只針對時間到且符合條件提醒)';
     }
@@ -675,20 +702,13 @@ function updateActiveAlerts() {
   }
 }
 
-function requestNotificationPermission() {
-  if ("Notification" in window) {
-    Notification.requestPermission().then(function (permission) {
-      if (permission === "granted") {
-        console.log("Notification permission granted.");
-      }
-    });
-  }
-}
+document.addEventListener('DOMContentLoaded', () => {
+  requestNotificationPermission();
+});
 
 loadWatchlistFromStorage();
 updateWatchlistUI();
 updateStockGrid();
 updateRefreshSchedule();
-requestNotificationPermission();
 </script>
 </body></html>
