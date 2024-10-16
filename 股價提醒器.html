@@ -1,0 +1,694 @@
+<html><head><base href="https://websim.ai/finance/"><title>多股票追蹤器 - 自動更新與價格提醒</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><style>
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f0f2f5;
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+.top-bar {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 15px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+}
+.refresh-options {
+  display: flex;
+  gap: 15px;
+}
+.refresh-option {
+  display: flex;
+  align-items: center;
+}
+.refresh-option input {
+  margin-right: 5px;
+}
+.content-wrapper {
+  display: flex;
+}
+.sidebar {
+  width: 250px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 20px;
+  margin-right: 20px;
+  height: calc(100vh - 140px);
+  overflow-y: auto;
+}
+.main-content {
+  flex-grow: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+  align-content: start;
+}
+.stock-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 15px;
+  font-size: 14px;
+  position: relative;
+}
+.remove-stock {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  color: #888;
+  background: none;
+  border: none;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  text-align: center;
+  border-radius: 50%;
+  transition: background-color 0.3s, color 0.3s;
+}
+.remove-stock:hover {
+  background-color: #f44336;
+  color: white;
+}
+h1, h2 {
+  color: #1e3a8a;
+  margin-top: 0;
+  font-size: 18px;
+}
+#stockForm {
+  margin-bottom: 20px;
+  padding: 0 5px;
+}
+#symbol {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+button {
+  padding: 10px;
+  font-size: 14px;
+  background-color: #1e3a8a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+button:hover {
+  background-color: #152c61;
+}
+#watchlist {
+  list-style-type: none;
+  padding: 0;
+}
+#watchlist li {
+  background-color: #e8eaf6;
+  margin-bottom: 5px;
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-size: 14px;
+}
+#watchlist li:hover {
+  background-color: #c5cae9;
+}
+.stock-data {
+  margin-bottom: 5px;
+  display: flex;
+  justify-content: space-between;
+}
+.stock-data span:first-child {
+  font-weight: bold;
+  color: #1e3a8a;
+}
+#errorMessage {
+  color: #d32f2f;
+  margin-top: 10px;
+  font-size: 14px;
+}
+.alert-price-input,
+.limit-price-input,
+.stop-loss-input,
+.shares-input {
+  width: calc(100% - 22px);
+  margin-top: 10px;
+  padding: 5px;
+  font-size: 14px;
+}
+.alert-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+.alert-buttons button {
+  width: 48%;
+  font-size: 12px;
+  padding: 5px;
+}
+.price-alert {
+  background-color: #ffcccb;
+}
+.copy-button {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+.copy-alert-button {
+  background-color: #ffcccb;
+  color: black;
+  border: none;
+  padding: 8px 10px;
+  text-align: center;
+  text-decoration: none;
+  display: block;
+  width: 100%;
+  font-size: 14px;
+  margin-top: 10px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.copy-alert-button:hover {
+  background-color: #ffb3b3;
+}
+.success-message {
+  color: #4caf50;
+  font-size: 14px;
+  margin-top: 5px;
+  text-align: center;
+}
+.footer {
+  background-color: #f0f2f5;
+  text-align: center;
+  padding: 10px;
+  margin-top: 20px;
+  font-size: 14px;
+  color: #666;
+}
+.footer a {
+  color: #1e3a8a;
+  text-decoration: none;
+}
+.footer a:hover {
+  text-decoration: underline;
+}
+#sortWatchlist {
+  width: 100%;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+@media (max-width: 768px) {
+  body {
+    padding: 10px;
+  }
+  
+  .top-bar {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .refresh-options {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: 10px;
+  }
+  
+  .content-wrapper {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 20px;
+    height: auto;
+  }
+  
+  .main-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .stock-card {
+    font-size: 16px;
+  }
+  
+  h1, h2 {
+    font-size: 20px;
+  }
+  
+  #symbol, button {
+    font-size: 16px;
+  }
+  
+  #watchlist li {
+    font-size: 16px;
+  }
+  
+  .alert-price-input,
+  .limit-price-input,
+  .stop-loss-input,
+  .shares-input {
+    font-size: 16px;
+  }
+  
+  .alert-buttons button {
+    font-size: 14px;
+  }
+  
+  .copy-button, .copy-alert-button {
+    font-size: 16px;
+  }
+  
+  .footer {
+    font-size: 12px;
+  }
+}
+</style></head><body>
+<div class="top-bar">
+  <h1>股票追蹤器</h1>
+  <div class="refresh-options">
+    <label class="refresh-option">
+      <input type="checkbox" id="refreshDay" value="day"> 日發送提醒
+    </label>
+    <label class="refresh-option">
+      <input type="checkbox" id="refresh00" value="00"> 00分發送提醒
+    </label>
+    <label class="refresh-option">
+      <input type="checkbox" id="refresh15" value="15"> 15分發送提醒
+    </label>
+    <label class="refresh-option">
+      <input type="checkbox" id="refresh30" value="30"> 30分發送提醒
+    </label>
+    <label class="refresh-option">
+      <input type="checkbox" id="refresh45" value="45"> 45分發送提醒
+    </label>
+    <label class="refresh-option">
+      <input type="checkbox" id="initialTimeCheck"> 初次只針對時間到且符合條件提醒
+    </label>
+  </div>
+</div>
+<div class="content-wrapper">
+  <div class="sidebar">
+    <h2>觀察清單</h2>
+    <form id="stockForm">
+      <input type="text" id="symbol" placeholder="輸入股票代號（如：AAPL）" required>
+      <button type="submit">新增股票</button>
+    </form>
+    <button id="sortWatchlist">重整</button>
+    <ul id="watchlist"></ul>
+    <div id="errorMessage"></div>
+    <h2>有效提醒</h2>
+    <ul id="activeAlerts"></ul>
+  </div>
+  <div class="main-content" id="stockGrid"></div>
+</div>
+<footer class="footer">
+  <p>股價資訊來源: <a href="https://finnhub.io/" target="_blank">Finnhub</a></p>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+const apiKey = 'cs6v841r01qkeuli9eu0cs6v841r01qkeuli9eug';
+const baseUrl = 'https://finnhub.io/api/v1';
+let watchlist = [];
+let refreshIntervals = [];
+let alertSettings = {};
+let sentNotifications = {};
+let initialAlertCheck = {};
+
+function loadWatchlistFromStorage() {
+  const savedWatchlist = localStorage.getItem('stockWatchlist');
+  if (savedWatchlist) {
+    watchlist = JSON.parse(savedWatchlist);
+    updateWatchlistUI();
+    updateStockGrid();
+  }
+  
+  const savedAlertSettings = localStorage.getItem('alertSettings');
+  if (savedAlertSettings) {
+    alertSettings = JSON.parse(savedAlertSettings);
+  }
+
+  const savedInitialAlertCheck = localStorage.getItem('initialAlertCheck');
+  if (savedInitialAlertCheck) {
+    initialAlertCheck = JSON.parse(savedInitialAlertCheck);
+  }
+  updateActiveAlerts();
+}
+
+function saveWatchlistToStorage() {
+  localStorage.setItem('stockWatchlist', JSON.stringify(watchlist));
+}
+
+function saveAlertSettingsToStorage() {
+  localStorage.setItem('alertSettings', JSON.stringify(alertSettings));
+  localStorage.setItem('initialAlertCheck', JSON.stringify(initialAlertCheck));
+}
+
+document.getElementById('stockForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const symbol = document.getElementById('symbol').value.toUpperCase();
+  await addToWatchlist(symbol);
+});
+
+document.querySelectorAll('.refresh-options input').forEach(checkbox => {
+  checkbox.addEventListener('change', updateRefreshSchedule);
+});
+
+document.getElementById('sortWatchlist').addEventListener('click', sortWatchlist);
+
+function sortWatchlist() {
+  watchlist.sort((a, b) => a.localeCompare(b));
+  saveWatchlistToStorage();
+  updateWatchlistUI();
+  updateStockGrid();
+}
+
+async function addToWatchlist(symbol) {
+  if (watchlist.includes(symbol)) {
+    showError('此股票已在觀察清單中');
+    return;
+  }
+  
+  try {
+    const stockInfo = await fetchStockInfo(symbol);
+    if (stockInfo) {
+      watchlist.push(symbol);
+      updateWatchlistUI();
+      updateStockGrid();
+      saveWatchlistToStorage();
+      document.getElementById('symbol').value = '';
+    }
+  } catch (error) {
+    showError('無法加入股票，請確認股票代號是否正確');
+  }
+}
+
+function updateWatchlistUI() {
+  const watchlistElement = document.getElementById('watchlist');
+  watchlistElement.innerHTML = '';
+  watchlist.forEach(symbol => {
+    const li = document.createElement('li');
+    li.textContent = symbol;
+    li.addEventListener('click', () => removeFromWatchlist(symbol));
+    watchlistElement.appendChild(li);
+  });
+}
+
+function removeFromWatchlist(symbol) {
+  watchlist = watchlist.filter(s => s !== symbol);
+  delete alertSettings[symbol];
+  delete sentNotifications[symbol];
+  delete initialAlertCheck[symbol];
+  updateWatchlistUI();
+  updateStockGrid();
+  saveWatchlistToStorage();
+  saveAlertSettingsToStorage();
+  updateActiveAlerts();
+}
+
+async function fetchStockInfo(symbol) {
+  try {
+    const response = await axios.get(`${baseUrl}/quote`, {
+      params: { symbol: symbol, token: apiKey }
+    });
+    const data = response.data;
+    if (data.c === 0 && data.h === 0 && data.l === 0) {
+      throw new Error('找不到股票資訊');
+    }
+    return data;
+  } catch (error) {
+    console.error('Error fetching stock data:', error);
+    return null;
+  }
+}
+
+async function updateStockGrid() {
+  const gridElement = document.getElementById('stockGrid');
+  gridElement.innerHTML = '';
+
+  for (const symbol of watchlist) {
+    const cardElement = document.createElement('div');
+    cardElement.className = 'stock-card';
+    cardElement.setAttribute('data-symbol', symbol);
+    gridElement.appendChild(cardElement);
+
+    await updateStockCard(symbol, cardElement);
+  }
+}
+
+async function updateStockCard(symbol, cardElement) {
+  const data = await fetchStockInfo(symbol);
+  if (data) {
+    const alertConditionMet = checkAlertCondition(symbol, data.c);
+    const alertClass = alertConditionMet ? 'price-alert' : '';
+    const alert = alertSettings[symbol];
+    const showCopyButtons = alertConditionMet && (!alert.initialTimeCheck || initialAlertCheck[symbol]);
+
+    cardElement.innerHTML = `
+      <button class="remove-stock" data-symbol="${symbol}">×</button>
+      <h2>${symbol}</h2>
+      <div class="stock-data ${alertClass}"><span>價格：</span><span>$${data.c.toFixed(2)}</span></div>
+      <div class="stock-data"><span>變動：</span><span>${data.d.toFixed(2)} (${data.dp.toFixed(2)}%)</span></div>
+      <div class="stock-data"><span>最高：</span><span>$${data.h.toFixed(2)}</span></div>
+      <div class="stock-data"><span>最低：</span><span>$${data.l.toFixed(2)}</span></div>
+      <input type="number" class="alert-price-input" placeholder="輸入提醒價格" value="${alert?.price || ''}">
+      <div class="alert-buttons">
+        <button class="high-alert">高於提醒價</button>
+        <button class="low-alert">低於提醒價</button>
+      </div>
+      <input type="number" class="limit-price-input" placeholder="限價" value="${alert?.limitPrice || ''}">
+      <input type="number" class="stop-loss-input" placeholder="停損價" value="${alert?.stopLossPrice || ''}">
+      <input type="number" class="shares-input" placeholder="股數" value="${alert?.shares || ''}">
+      ${showCopyButtons ? `
+        <button class="copy-button" data-symbol="${symbol}">複製股票名稱</button>
+        <button class="copy-alert-button" data-symbol="${symbol}">複製股票名稱和提醒</button>
+      ` : ''}
+    `;
+
+    const removeButton = cardElement.querySelector('.remove-stock');
+    removeButton.addEventListener('click', () => removeFromWatchlist(symbol));
+
+    const alertPriceInput = cardElement.querySelector('.alert-price-input');
+    const highAlertButton = cardElement.querySelector('.high-alert');
+    const lowAlertButton = cardElement.querySelector('.low-alert');
+
+    highAlertButton.addEventListener('click', () => setAlertPrice(symbol, alertPriceInput.value, 'high'));
+    lowAlertButton.addEventListener('click', () => setAlertPrice(symbol, alertPriceInput.value, 'low'));
+    
+    if (showCopyButtons) {
+      const copyButton = cardElement.querySelector('.copy-button');
+      const copyAlertButton = cardElement.querySelector('.copy-alert-button');
+      copyButton.addEventListener('click', () => copyStockSymbol(symbol));
+      copyAlertButton.addEventListener('click', () => copyStockSymbolWithAlert(symbol, alert.type));
+    }
+  } else {
+    cardElement.innerHTML = `
+      <button class="remove-stock" data-symbol="${symbol}">×</button>
+      <p>無法獲取 ${symbol} 的資訊</p>
+    `;
+    const removeButton = cardElement.querySelector('.remove-stock');
+    removeButton.addEventListener('click', () => removeFromWatchlist(symbol));
+  }
+}
+
+function copyStockSymbol(symbol) {
+  navigator.clipboard.writeText(symbol).then(() => {
+    showNotification(symbol, '已複製', 'copy');
+  }, (err) => {
+    console.error('無法複製股票名稱: ', err);
+  });
+}
+
+function copyStockSymbolWithAlert(symbol, alertType) {
+  const alert = alertSettings[symbol];
+  const alertText = alertType === 'high' ? '高於提醒價' : '低於提醒價';
+  const limitPriceText = alert.limitPrice ? `限價：${alert.limitPrice}` : '';
+  const stopLossPriceText = alert.stopLossPrice ? `停損價：${alert.stopLossPrice}` : '';
+  const sharesText = alert.shares ? `股數：${alert.shares}` : '';
+  
+  const textToCopy = `${symbol} ${alertText} ${limitPriceText} ${stopLossPriceText} ${sharesText}`.trim();
+  
+  navigator.clipboard.writeText(textToCopy).then(() => {
+    showNotification(symbol, '已複製股票名稱和提醒', 'copy');
+    delete alertSettings[symbol];
+    delete sentNotifications[symbol];
+    delete initialAlertCheck[symbol];
+    saveAlertSettingsToStorage();
+    updateStockGrid();
+    updateActiveAlerts();
+  }, (err) => {
+    console.error('無法複製股票名稱和提醒: ', err);
+  });
+}
+
+function setAlertPrice(symbol, price, type) {
+  if (price && !isNaN(price)) {
+    const selectedTimes = Array.from(document.querySelectorAll('.refresh-options input:checked'))
+      .map(checkbox => checkbox.value);
+    
+    const cardElement = document.querySelector(`.stock-card[data-symbol="${symbol}"]`);
+    const limitPrice = cardElement.querySelector('.limit-price-input').value;
+    const stopLossPrice = cardElement.querySelector('.stop-loss-input').value;
+    const shares = cardElement.querySelector('.shares-input').value;
+    const initialTimeCheck = document.getElementById('initialTimeCheck').checked;
+
+    alertSettings[symbol] = { 
+      price: parseFloat(price), 
+      type: type,
+      times: selectedTimes,
+      limitPrice: limitPrice ? parseFloat(limitPrice) : null,
+      stopLossPrice: stopLossPrice ? parseFloat(stopLossPrice) : null,
+      shares: shares ? parseInt(shares) : null,
+      initialTimeCheck: initialTimeCheck
+    };
+    sentNotifications[symbol] = false;
+    initialAlertCheck[symbol] = false;
+    saveAlertSettingsToStorage();
+    updateStockGrid();
+    updateActiveAlerts();
+    showSuccessMessage(symbol);
+  } else {
+    showError('請輸入有效的價格');
+  }
+}
+
+function showSuccessMessage(symbol) {
+  const cardElement = document.querySelector(`.stock-card[data-symbol="${symbol}"]`);
+  const successMessage = document.createElement('div');
+  successMessage.className = 'success-message';
+  successMessage.textContent = '成功設置提醒';
+  cardElement.querySelector('.alert-buttons').after(successMessage);
+  
+  setTimeout(() => {
+    successMessage.remove();
+  }, 3000);
+}
+
+function checkAlertCondition(symbol, currentPrice) {
+  const alert = alertSettings[symbol];
+  if (!alert) return false;
+
+  const now = new Date();
+  const currentMinute = now.getMinutes();
+  const currentHour = now.getHours();
+
+  let shouldAlert = false;
+  if (alert.type === 'high' && currentPrice > alert.price) {
+    shouldAlert = true;
+  }
+  if (alert.type === 'low' && currentPrice < alert.price) {
+    shouldAlert = true;
+  }
+
+  const isDesignatedTime = alert.times.includes(currentMinute.toString().padStart(2, '0')) || 
+                           (alert.times.includes('day') && currentHour === 21 && currentMinute === 30);
+
+  if (shouldAlert && !sentNotifications[symbol] && currentMinute % 5 === 0) {
+    if (alert.initialTimeCheck && !initialAlertCheck[symbol]) {
+      if (isDesignatedTime) {
+        showNotification(symbol, currentPrice, alert.type, alert.price);
+        sentNotifications[symbol] = true;
+        initialAlertCheck[symbol] = true;
+      }
+    } else if (isDesignatedTime) {
+      showNotification(symbol, currentPrice, alert.type, alert.price);
+      sentNotifications[symbol] = true;
+    }
+  }
+
+  return shouldAlert && (!alert.initialTimeCheck || initialAlertCheck[symbol]);
+}
+
+function showNotification(symbol, currentPrice, alertType, alertPrice) {
+  if (Notification.permission === "granted") {
+    const title = `${symbol} 提醒`;
+    const body = `${symbol} ${alertType === 'high' ? '高於' : '低於'}提醒價格 $${alertPrice}。當前價格：$${currentPrice}`;
+    const notification = new Notification(title, { body: body });
+    
+    notification.onclick = function() {
+      window.focus();
+      this.close();
+    };
+  }
+}
+
+function showError(message) {
+  const errorElement = document.getElementById('errorMessage');
+  errorElement.textContent = message;
+  setTimeout(() => {
+    errorElement.textContent = '';
+  }, 3000);
+}
+
+function updateRefreshSchedule() {
+  refreshIntervals.forEach(clearInterval);
+  refreshIntervals = [];
+
+  const now = new Date();
+  const secondsUntilNextFiveMinutes = (5 - (now.getMinutes() % 5)) * 60 - now.getSeconds();
+  
+  setTimeout(() => {
+    updateStockGridAndCheckAlerts();
+    const fiveMinuteInterval = setInterval(updateStockGridAndCheckAlerts, 5 * 60 * 1000);
+    refreshIntervals.push(fiveMinuteInterval);
+  }, secondsUntilNextFiveMinutes * 1000);
+}
+
+async function updateStockGridAndCheckAlerts() {
+  await updateStockGrid();
+  checkAllAlerts();
+}
+
+async function checkAllAlerts() {
+  for (const symbol of watchlist) {
+    const data = await fetchStockInfo(symbol);
+    if (data) {
+      checkAlertCondition(symbol, data.c);
+    }
+  }
+}
+
+function updateActiveAlerts() {
+  const activeAlertsElement = document.getElementById('activeAlerts');
+  activeAlertsElement.innerHTML = '';
+
+  for (const [symbol, alert] of Object.entries(alertSettings)) {
+    const li = document.createElement('li');
+    const times = alert.times.includes('day') ? [...alert.times.filter(t => t !== 'day'), '21:30'] : alert.times;
+    li.textContent = `${symbol}: ${alert.type === 'high' ? '高於' : '低於'} $${alert.price} (${times.join(', ')}分)`;
+    if (alert.initialTimeCheck) {
+      li.textContent += ' (初次只針對時間到且符合條件提醒)';
+    }
+    activeAlertsElement.appendChild(li);
+  }
+}
+
+function requestNotificationPermission() {
+  if ("Notification" in window) {
+    Notification.requestPermission().then(function (permission) {
+      if (permission === "granted") {
+        console.log("Notification permission granted.");
+      }
+    });
+  }
+}
+
+loadWatchlistFromStorage();
+updateWatchlistUI();
+updateStockGrid();
+updateRefreshSchedule();
+requestNotificationPermission();
+</script>
+</body></html>
