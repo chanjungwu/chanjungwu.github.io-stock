@@ -229,6 +229,7 @@
         <label><input type="checkbox" id="reminder3h" value="3h"> 3小時</label>
         <label><input type="checkbox" id="reminder4h" value="4h"> 4小時</label>
         <label><input type="checkbox" id="reminder8h" value="8h"> 8小時</label>
+        <label><input type="checkbox" id="copyAndDelete"> 複製資訊取消提醒</label>
     </div>
     <div>
         <button class="add-stock" onclick="addStock('stock')">+</button>
@@ -456,6 +457,12 @@ function deleteAlert(symbol) {
         saveData();
         updateAlertList();
         clearAlertState(symbol);
+        
+        // Remove the copy button if it exists
+        const copyButton = document.getElementById(`copy-info-${symbol}`);
+        if (copyButton) {
+            copyButton.remove();
+        }
     }
 }
 
@@ -695,6 +702,12 @@ function copyTradeInfo(symbol) {
         navigator.clipboard.writeText(info).then(() => {
             console.log('交易資訊已複製到剪貼簿');
             clearAlertState(symbol);
+            
+            // Check if the "複製資訊取消提醒" checkbox is checked
+            const copyAndDeleteCheckbox = document.getElementById('copyAndDelete');
+            if (copyAndDeleteCheckbox && copyAndDeleteCheckbox.checked) {
+                deleteAlert(symbol);
+            }
         }, (err) => {
             console.error('無法複製交易資訊: ', err);
         });
