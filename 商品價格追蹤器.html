@@ -1,0 +1,810 @@
+<html><head><base href="https://finnhub-api.site/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>多股票價格監控 - 價格提醒與交易建議</title><style>
+    body, html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+    }
+    .header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background-color: #007bff;
+        color: white;
+        padding: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 1000;
+    }
+    .time-reminders {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .time-reminders label {
+        display: flex;
+        align-items: center;
+        font-size: 12px;
+    }
+    .time-reminders input[type="checkbox"] {
+        margin-right: 5px;
+    }
+    .add-stock, .add-crypto {
+        font-size: 24px;
+        cursor: pointer;
+        background: none;
+        border: none;
+        color: white;
+    }
+    .add-crypto {
+        color: yellow;
+        margin-left: 10px;
+    }
+    .alert-list {
+        position: fixed;
+        left: 0;
+        top: 50px;
+        bottom: 0;
+        width: 200px;
+        background-color: #f8f9fa;
+        padding: 15px;
+        overflow-y: auto;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    }
+    .alert-list h3 {
+        margin-top: 0;
+        color: #007bff;
+    }
+    .alert-list ul {
+        list-style-type: none;
+        padding: 0;
+    }
+    .alert-list li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        padding: 5px;
+        background-color: #e9ecef;
+        border-radius: 5px;
+        font-size: 0.9em;
+    }
+    .delete-alert {
+        cursor: pointer;
+        color: #ff4136;
+        font-size: 0.8em;
+        padding-left: 5px;
+    }
+    .container {
+        margin-left: 220px; 
+        padding-top: 50px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: flex-start;
+    }
+    .stock-widget {
+        width: calc(25% - 20px);
+        margin: 10px;
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        padding: 15px;
+        overflow: auto;
+    }
+    h2 {
+        font-size: 1.2em;
+        margin-bottom: 10px;
+        color: #007bff;
+        padding: 5px;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .stock-title {
+        flex-grow: 1;
+    }
+    .title-buttons {
+        display: flex;
+        align-items: center;
+    }
+    .remove-stock {
+        cursor: pointer;
+        color: #ff4136;
+        margin-left: 10px;
+    }
+    .copy-info {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 12px;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+    .stock-info {
+        font-size: 0.9em;
+    }
+    .loading {
+        text-align: center;
+        color: #888;
+    }
+    .next-update {
+        font-size: 0.8em;
+        color: #888;
+        text-align: center;
+        margin-top: 10px;
+    }
+    .next-update-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 10px;
+    }
+    .refresh-button {
+        margin-right: 10px;
+        padding: 5px 10px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .refresh-button:hover {
+        background-color: #0056b3;
+    }
+    .alert-settings {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .alert-input, .price-input {
+        width: calc(25% - 5px);
+        padding: 5px;
+        margin-bottom: 10px;
+        box-sizing: border-box;
+    }
+    .alert-buttons {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+    }
+    .alert-button {
+        width: 48%;
+        padding: 5px;
+        cursor: pointer;
+    }
+    .highlight-green {
+        background-color: #c8e6c9;
+    }
+    .highlight-red {
+        background-color: #ffcdd2;
+    }
+    @media (max-width: 1200px) {
+        .stock-widget {
+            width: calc(50% - 20px);
+        }
+    }
+    @media (max-width: 900px) {
+        .alert-list {
+            width: 150px;
+        }
+        .container {
+            margin-left: 170px;
+        }
+        .stock-widget {
+            width: calc(100% - 20px);
+        }
+    }
+    @media (max-width: 600px) {
+        .alert-list {
+            display: none;
+        }
+        .container {
+            margin-left: 0;
+        }
+    }
+</style></head><body>
+<div class="header">
+    <div class="time-reminders">
+        <label><input type="checkbox" id="reminder0800" value="0800"> 08:00提醒</label>
+        <label><input type="checkbox" id="reminder00" value="00"> 00分提醒</label>
+        <label><input type="checkbox" id="reminder15" value="15"> 15分提醒</label>
+        <label><input type="checkbox" id="reminder30" value="30"> 30分提醒</label>
+        <label><input type="checkbox" id="reminder45" value="45"> 45分提醒</label>
+        <label><input type="checkbox" id="reminder1h" value="1h"> 1小時</label>
+        <label><input type="checkbox" id="reminder2h" value="2h"> 2小時</label>
+        <label><input type="checkbox" id="reminder3h" value="3h"> 3小時</label>
+        <label><input type="checkbox" id="reminder4h" value="4h"> 4小時</label>
+        <label><input type="checkbox" id="reminder8h" value="8h"> 8小時</label>
+    </div>
+    <div>
+        <button class="add-stock" onclick="addStock('stock')">+</button>
+        <button class="add-crypto" onclick="addStock('crypto')">+</button>
+    </div>
+</div>
+<div class="alert-list" id="alertList">
+    <h3>有效提醒清單</h3>
+    <ul id="activeAlerts"></ul>
+</div>
+<div class="container" id="stockContainer">
+    <!-- 股票資訊將在這裡動態生成 -->
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+const API_KEY = 'cs6v841r01qkeuli9eu0cs6v841r01qkeuli9eug';
+let stockSymbols = [];
+let alertSettings = {};
+let timeReminders = {
+    "0800": false,
+    "00": false,
+    "15": false,
+    "30": false,
+    "45": false,
+    "1h": false,
+    "2h": false,
+    "3h": false,
+    "4h": false,
+    "8h": false
+};
+
+function getDecimalPlaces(price) {
+    if (price >= 1000) return 2;
+    if (price >= 100) return 3;
+    if (price >= 10) return 4;
+    if (price >= 1) return 5;
+    if (price >= 0.1) return 6;
+    return 8;
+}
+
+function loadSavedData() {
+    const savedStocks = localStorage.getItem('savedStocks');
+    const savedAlerts = localStorage.getItem('savedAlerts');
+    const savedReminders = localStorage.getItem('timeReminders');
+    if (savedStocks) {
+        stockSymbols = JSON.parse(savedStocks);
+        stockSymbols.forEach(item => {
+            createStockWidget(item.symbol, item.type);
+            if (item.type === 'crypto') {
+                getCryptoQuote(item.symbol);
+                if (item.marketType) {
+                    const radio = document.querySelector(`input[name="market-${item.symbol}"][value="${item.marketType}"]`);
+                    if (radio) radio.checked = true;
+                }
+            } else {
+                getStockQuote(item.symbol);
+            }
+        });
+    }
+    if (savedAlerts) {
+        alertSettings = JSON.parse(savedAlerts);
+        updateAlertList(); 
+    }
+    if (savedReminders) {
+        timeReminders = JSON.parse(savedReminders);
+        loadTimeReminders();
+    }
+}
+
+function saveData() {
+    localStorage.setItem('savedStocks', JSON.stringify(stockSymbols));
+    localStorage.setItem('savedAlerts', JSON.stringify(alertSettings));
+}
+
+function addStock(type) {
+    const symbol = prompt(`請輸入${type === 'crypto' ? '加密貨幣' : '股票'}代號：`);
+    if (symbol && !stockSymbols.some(item => item.symbol === symbol.toUpperCase())) {
+        const upperSymbol = symbol.toUpperCase();
+        stockSymbols.push({symbol: upperSymbol, type: type, marketType: type === 'crypto' ? 'spot' : null});
+        createStockWidget(upperSymbol, type);
+        if (type === 'crypto') {
+            getCryptoQuote(upperSymbol);
+        } else {
+            getStockQuote(upperSymbol);
+        }
+        saveData();
+    }
+}
+
+function createStockWidget(symbol, type) {
+    const container = document.getElementById('stockContainer');
+    const widget = document.createElement('div');
+    widget.className = 'stock-widget';
+    widget.id = `stock-${symbol}`;
+    widget.innerHTML = `
+        <h2 id="title-${symbol}">
+            <span class="stock-title">${symbol} ${type === 'crypto' ? '(加密貨幣)' : ''}</span>
+            <div class="title-buttons">
+                ${type === 'crypto' ? `
+                    <label><input type="radio" name="market-${symbol}" value="spot" checked> 現貨</label>
+                    <label><input type="radio" name="market-${symbol}" value="futures"> 合約</label>
+                ` : ''}
+                <span class="remove-stock" onclick="removeStock('${symbol}')">✖</span>
+            </div>
+        </h2>
+        <div class="stock-info">
+            <p class="loading">載入中...</p>
+        </div>
+        <div class="next-update-container">
+            <button class="refresh-button" onclick="refreshStock('${symbol}')">刷新</button>
+            <span class="next-update"></span>
+        </div>
+        <div class="alert-settings">
+            <input type="number" id="alert-price-${symbol}" class="alert-input" placeholder="提醒價格">
+            <input type="number" id="investment-amount-${symbol}" class="alert-input" placeholder="投資數量">
+            <input type="number" id="limit-price-${symbol}" class="price-input" placeholder="建議限價">
+            <input type="number" id="stop-loss-${symbol}" class="price-input" placeholder="建議停損價">
+            <div class="alert-buttons">
+                <button class="alert-button" onclick="setAlert('${symbol}', 'high')">高於時提醒</button>
+                <button class="alert-button" onclick="setAlert('${symbol}', 'low')">低於時提醒</button>
+            </div>
+        </div>
+    `;
+    container.appendChild(widget);
+
+    if (type === 'crypto') {
+        const marketRadios = widget.querySelectorAll('input[type="radio"]');
+        marketRadios.forEach(radio => {
+            radio.addEventListener('change', () => updateCryptoMarket(symbol));
+        });
+    }
+}
+
+function refreshStock(symbol) {
+    const stockData = stockSymbols.find(s => s.symbol === symbol);
+    if (stockData.type === 'crypto') {
+        getCryptoQuote(symbol);
+    } else {
+        getStockQuote(symbol);
+    }
+}
+
+function updateCryptoMarket(symbol) {
+    const marketType = document.querySelector(`input[name="market-${symbol}"]:checked`).value;
+    const stockIndex = stockSymbols.findIndex(s => s.symbol === symbol);
+    if (stockIndex !== -1) {
+        stockSymbols[stockIndex].marketType = marketType;
+        saveData();
+        getCryptoQuote(symbol);
+    }
+}
+
+function removeStock(symbol) {
+    stockSymbols = stockSymbols.filter(s => s.symbol !== symbol);
+    delete alertSettings[symbol];
+    const widget = document.getElementById(`stock-${symbol}`);
+    if (widget) {
+        widget.remove();
+    }
+    saveData();
+    updateAlertList(); 
+}
+
+function getNextAlertTime(timeReminders) {
+    const now = new Date();
+    let nextTime = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1); // Start with tomorrow
+
+    for (let reminder of timeReminders) {
+        let checkTime = new Date(now);
+        
+        if (reminder === '0800') {
+            checkTime.setHours(8, 0, 0, 0);
+        } else if (['00', '15', '30', '45'].includes(reminder)) {
+            checkTime.setMinutes(parseInt(reminder), 0, 0);
+            if (checkTime <= now) checkTime.setHours(checkTime.getHours() + 1);
+        } else if (reminder.endsWith('h')) {
+            const hours = parseInt(reminder);
+            checkTime.setMinutes(0, 0, 0);
+            while (checkTime <= now || checkTime.getHours() % hours !== 0) {
+                checkTime.setHours(checkTime.getHours() + 1);
+            }
+        }
+        
+        if (checkTime < nextTime && checkTime > now) {
+            nextTime = checkTime;
+        }
+    }
+
+    return nextTime;
+}
+
+function updateAlertList() {
+    const alertListElement = document.getElementById('activeAlerts');
+    alertListElement.innerHTML = '';
+    
+    for (const [symbol, alert] of Object.entries(alertSettings)) {
+        const listItem = document.createElement('li');
+        const timeConditions = alert.timeReminders.length > 0 ? 
+            `時間條件：${alert.timeReminders.join(', ')}` : '無時間條件';
+        
+        let nextAlertTime = '';
+        if (alert.timeReminders.length > 0) {
+            const nextTime = getNextAlertTime(alert.timeReminders);
+            nextAlertTime = `下次最快發生提醒時間：${nextTime.toLocaleString('zh-TW', {
+                month: 'numeric',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+            })}`;
+        }
+        
+        listItem.innerHTML = `
+            <span>${symbol}: ${alert.type === 'high' ? '高於' : '低於'} $${alert.alertPrice} (${timeConditions})</span>
+            ${nextAlertTime ? `<br><span style="font-size: 0.9em; color: #666;">${nextAlertTime}</span>` : ''}
+            <span class="delete-alert" onclick="deleteAlert('${symbol}')">✖</span>
+        `;
+        alertListElement.appendChild(listItem);
+    }
+}
+
+function deleteAlert(symbol) {
+    if (alertSettings[symbol]) {
+        delete alertSettings[symbol];
+        saveData();
+        updateAlertList();
+        clearAlertState(symbol);
+    }
+}
+
+function clearAlertState(symbol) {
+    const titleElement = document.getElementById(`title-${symbol}`);
+    if (titleElement) {
+        titleElement.classList.remove('highlight-green', 'highlight-red');
+        const copyButton = document.getElementById(`copy-info-${symbol}`);
+        if (copyButton) {
+            copyButton.remove();
+        }
+    }
+}
+
+function setAlert(symbol, type) {
+    const alertPriceInput = document.getElementById(`alert-price-${symbol}`);
+    const investmentAmountInput = document.getElementById(`investment-amount-${symbol}`);
+    const limitPriceInput = document.getElementById(`limit-price-${symbol}`);
+    const stopLossInput = document.getElementById(`stop-loss-${symbol}`);
+    
+    const alertPrice = parseFloat(alertPriceInput.value);
+    const investmentAmount = parseFloat(investmentAmountInput.value);
+    const limitPrice = parseFloat(limitPriceInput.value);
+    const stopLossPrice = parseFloat(stopLossInput.value);
+    
+    if (!isNaN(alertPrice)) {
+        const selectedTimeReminders = Object.keys(timeReminders).filter(time => timeReminders[time]);
+        
+        alertSettings[symbol] = {
+            alertPrice,
+            type,
+            investmentAmount: !isNaN(investmentAmount) ? investmentAmount : null,
+            limitPrice: !isNaN(limitPrice) ? limitPrice : null,
+            stopLossPrice: !isNaN(stopLossPrice) ? stopLossPrice : null,
+            timeReminders: selectedTimeReminders,
+            initialAlert: true
+        };
+        saveData();
+        updateAlertList(); 
+        console.log(`已設置 ${symbol} 的${type === 'high' ? '高於' : '低於'}${alertPrice}提醒，時間條件：${selectedTimeReminders.join(', ')}`);
+        
+        if (symbol in stockSymbols) {
+            if (alertSettings[symbol].type === 'crypto') {
+                getCryptoQuote(symbol);
+            } else {
+                getStockQuote(symbol);
+            }
+        }
+    } else {
+        console.log("請輸入有效的提醒價格");
+    }
+}
+
+async function getStockQuote(symbol) {
+    const stockInfo = document.querySelector(`#stock-${symbol} .stock-info`);
+    const titleElement = document.getElementById(`title-${symbol}`);
+    if (!stockInfo || !titleElement) return;
+
+    try {
+        const response = await axios.get(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${API_KEY}`);
+        const data = response.data;
+        
+        const changeColor = data.c > data.pc ? 'green' : data.c < data.pc ? 'red' : 'black';
+        const changeArrow = data.c > data.pc ? '▲' : data.c < data.pc ? '▼' : '■';
+        
+        stockInfo.innerHTML = `
+            <p>目前價格: $${data.c.toFixed(2)}</p>
+            <p style="color: ${changeColor}">
+                變動: ${changeArrow} $${(data.c - data.pc).toFixed(2)} (${((data.c - data.pc) / data.pc * 100).toFixed(2)}%)
+            </p>
+            <p>最高: $${data.h.toFixed(2)} | 最低: $${data.l.toFixed(2)}</p>
+            <p>開盤: $${data.o.toFixed(2)} | 前收: $${data.pc.toFixed(2)}</p>
+        `;
+
+        updateNextUpdateTime();
+
+        if (alertSettings[symbol]) {
+            const alert = alertSettings[symbol];
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMinutes = now.getMinutes();
+            const currentTime = `${currentHour.toString().padStart(2, '0')}${currentMinutes.toString().padStart(2, '0')}`;
+            
+            const isTimeConditionMet = alert.timeReminders.length === 0 || 
+                                       (alert.initialAlert && 
+                                        (alert.timeReminders.includes(currentMinutes.toString().padStart(2, '0')) ||
+                                         (alert.timeReminders.includes('0800') && currentTime === '0800') ||
+                                         (alert.timeReminders.includes('1h') && currentMinutes === 0) ||
+                                         (alert.timeReminders.includes('2h') && currentHour % 2 === 0 && currentMinutes === 0) ||
+                                         (alert.timeReminders.includes('3h') && currentHour % 3 === 0 && currentMinutes === 0) ||
+                                         (alert.timeReminders.includes('4h') && currentHour % 4 === 0 && currentMinutes === 0) ||
+                                         (alert.timeReminders.includes('8h') && (currentHour === 0 || currentHour === 8 || currentHour === 16) && currentMinutes === 0))) ||
+                                       !alert.initialAlert;
+
+            if (isTimeConditionMet &&
+                ((alert.type === 'high' && data.c > alert.alertPrice) ||
+                 (alert.type === 'low' && data.c < alert.alertPrice))) {
+                if (alert.initialAlert) {
+                    notifyUser(symbol, data.c, alert.type);
+                    alertSettings[symbol].timeReminders = [];
+                    alertSettings[symbol].initialAlert = false;
+                    saveData();
+                    updateAlertList();
+                }
+                titleElement.classList.add(alert.type === 'high' ? 'highlight-green' : 'highlight-red');
+                
+                if (!document.getElementById(`copy-info-${symbol}`)) {
+                    const copyButton = document.createElement('button');
+                    copyButton.id = `copy-info-${symbol}`;
+                    copyButton.className = 'copy-info';
+                    copyButton.textContent = '複製資訊';
+                    copyButton.onclick = () => copyTradeInfo(symbol);
+                    const titleButtons = titleElement.querySelector('.title-buttons');
+                    titleButtons.insertBefore(copyButton, titleButtons.firstChild);
+                }
+            } else if (!isTimeConditionMet) {
+                console.log(`${symbol} 的提醒條件未滿足時間要求`);
+            } else {
+                clearAlertState(symbol);
+            }
+        }
+    } catch (error) {
+        console.error('獲取股票資訊時發生錯誤:', error);
+        stockInfo.innerHTML = '<p>獲取資訊時發生錯誤，請稍後再試。</p>';
+    }
+}
+
+async function getCryptoQuote(symbol) {
+    const stockInfo = document.querySelector(`#stock-${symbol} .stock-info`);
+    const titleElement = document.getElementById(`title-${symbol}`);
+    if (!stockInfo || !titleElement) return;
+
+    const stockData = stockSymbols.find(s => s.symbol === symbol);
+    const marketType = stockData.marketType || 'spot';
+
+    try {
+        let response;
+        if (marketType === 'spot') {
+            response = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`);
+        } else {
+            response = await fetch(`https://fapi.binance.com/fapi/v1/ticker/24hr?symbol=${symbol}`);
+        }
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        
+        const lastPrice = parseFloat(data.lastPrice);
+        const decimalPlaces = getDecimalPlaces(lastPrice);
+        
+        const changeColor = parseFloat(data.priceChangePercent) > 0 ? 'green' : parseFloat(data.priceChangePercent) < 0 ? 'red' : 'black';
+        const changeArrow = parseFloat(data.priceChangePercent) > 0 ? '▲' : parseFloat(data.priceChangePercent) < 0 ? '▼' : '■';
+        
+        stockInfo.innerHTML = `
+            <p>目前價格: $${lastPrice.toFixed(decimalPlaces)}</p>
+            <p style="color: ${changeColor}">
+                變動: ${changeArrow} $${parseFloat(data.priceChange).toFixed(decimalPlaces)} (${parseFloat(data.priceChangePercent).toFixed(2)}%)
+            </p>
+            <p>最高: $${parseFloat(data.highPrice).toFixed(decimalPlaces)} | 最低: $${parseFloat(data.lowPrice).toFixed(decimalPlaces)}</p>
+            <p>開盤: $${parseFloat(data.openPrice).toFixed(decimalPlaces)} | 成交量: ${parseFloat(data.volume).toFixed(2)}</p>
+        `;
+
+        updateNextUpdateTime();
+
+        if (alertSettings[symbol]) {
+            const alert = alertSettings[symbol];
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMinutes = now.getMinutes();
+            const currentTime = `${currentHour.toString().padStart(2, '0')}${currentMinutes.toString().padStart(2, '0')}`;
+            
+            const isTimeConditionMet = alert.timeReminders.length === 0 || 
+                                       (alert.initialAlert && 
+                                        (alert.timeReminders.includes(currentMinutes.toString().padStart(2, '0')) ||
+                                         (alert.timeReminders.includes('0800') && currentTime === '0800') ||
+                                         (alert.timeReminders.includes('1h') && currentMinutes === 0) ||
+                                         (alert.timeReminders.includes('2h') && currentHour % 2 === 0 && currentMinutes === 0) ||
+                                         (alert.timeReminders.includes('3h') && currentHour % 3 === 0 && currentMinutes === 0) ||
+                                         (alert.timeReminders.includes('4h') && currentHour % 4 === 0 && currentMinutes === 0) ||
+                                         (alert.timeReminders.includes('8h') && (currentHour === 0 || currentHour === 8 || currentHour === 16) && currentMinutes === 0))) ||
+                                       !alert.initialAlert;
+
+            if (isTimeConditionMet &&
+                ((alert.type === 'high' && parseFloat(data.lastPrice) > alert.alertPrice) ||
+                 (alert.type === 'low' && parseFloat(data.lastPrice) < alert.alertPrice))) {
+                if (alert.initialAlert) {
+                    notifyUser(symbol, parseFloat(data.lastPrice), alert.type);
+                    alertSettings[symbol].timeReminders = [];
+                    alertSettings[symbol].initialAlert = false;
+                    saveData();
+                    updateAlertList();
+                }
+                titleElement.classList.add(alert.type === 'high' ? 'highlight-green' : 'highlight-red');
+                
+                if (!document.getElementById(`copy-info-${symbol}`)) {
+                    const copyButton = document.createElement('button');
+                    copyButton.id = `copy-info-${symbol}`;
+                    copyButton.className = 'copy-info';
+                    copyButton.textContent = '複製資訊';
+                    copyButton.onclick = () => copyTradeInfo(symbol);
+                    const titleButtons = titleElement.querySelector('.title-buttons');
+                    titleButtons.insertBefore(copyButton, titleButtons.firstChild);
+                }
+            } else if (!isTimeConditionMet) {
+                console.log(`${symbol} 的提醒條件未滿足時間要求`);
+            } else {
+                clearAlertState(symbol);
+            }
+        }
+    } catch (error) {
+        console.error('獲取加密貨幣資訊時發生錯誤:', error);
+        stockInfo.innerHTML = '<p>獲取資訊時發生錯誤，請稍後再試。</p>';
+    }
+}
+
+function notifyUser(symbol, price, type) {
+    if ("Notification" in window) {
+        Notification.requestPermission().then(function (permission) {
+            if (permission === "granted") {
+                new Notification(`股價提醒: ${symbol}`, {
+                    body: `目前價格 $${price.toFixed(2)} 已${type === 'high' ? '高於' : '低於'}設定的提醒價格`,
+                });
+            }
+        });
+    }
+    console.log(`股價提醒: ${symbol} 目前價格 $${price.toFixed(2)} 已${type === 'high' ? '高於' : '低於'}設定的提醒價格`);
+}
+
+function copyTradeInfo(symbol) {
+    const alert = alertSettings[symbol];
+    if (alert) {
+        const info = `商品代號：${symbol}\n` +
+                     `數量：${alert.investmentAmount || '無'}\n` +
+                     `限價：${alert.limitPrice || '無'}\n` +
+                     `停損價：${alert.stopLossPrice || '無'}`;
+        navigator.clipboard.writeText(info).then(() => {
+            console.log('交易資訊已複製到剪貼簿');
+            clearAlertState(symbol);
+        }, (err) => {
+            console.error('無法複製交易資訊: ', err);
+        });
+    }
+}
+
+function updateNextUpdateTime() {
+    const now = new Date();
+    const nextUpdate = new Date(now.getTime() + 60000);
+    const nextUpdateStr = nextUpdate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    document.querySelectorAll('.next-update').forEach(el => {
+        el.textContent = `下次更新時間: ${nextUpdateStr}`;
+    });
+}
+
+function scheduleNextUpdate() {
+    const now = new Date();
+    const secondsUntilNextMinute = 60 - now.getSeconds();
+
+    setTimeout(() => {
+        updateAllStocks();
+        checkTimeReminders();
+        scheduleNextUpdate();
+    }, secondsUntilNextMinute * 1000);
+}
+
+function updateAllStocks() {
+    stockSymbols.forEach(item => {
+        if (item.type === 'crypto') {
+            getCryptoQuote(item.symbol);
+        } else {
+            getStockQuote(item.symbol);
+        }
+    });
+}
+
+function initializeTimeReminders() {
+    const reminderInputs = document.querySelectorAll('.time-reminders input');
+    reminderInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            timeReminders[this.value] = this.checked;
+            saveTimeReminders();
+        });
+    });
+}
+
+function saveTimeReminders() {
+    localStorage.setItem('timeReminders', JSON.stringify(timeReminders));
+}
+
+function loadTimeReminders() {
+    Object.keys(timeReminders).forEach(time => {
+        const input = document.getElementById(`reminder${time}`);
+        if (input) {
+            input.checked = timeReminders[time];
+        }
+    });
+}
+
+function checkTimeReminders() {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const currentTime = `${hours.toString().padStart(2, '0')}${minutes.toString().padStart(2, '0')}`;
+    
+    if (timeReminders['0800'] && currentTime === '0800') {
+        notifyTimeReminder('08:00');
+    } else if (timeReminders[minutes.toString().padStart(2, '0')]) {
+        notifyTimeReminder(minutes);
+    }
+
+    if (timeReminders['1h'] && minutes === 0) {
+        notifyTimeReminder('1小時');
+    }
+    if (timeReminders['2h'] && hours % 2 === 0 && minutes === 0) {
+        notifyTimeReminder('2小時');
+    }
+    if (timeReminders['3h'] && hours % 3 === 0 && minutes === 0) {
+        notifyTimeReminder('3小時');
+    }
+    if (timeReminders['4h'] && hours % 4 === 0 && minutes === 0) {
+        notifyTimeReminder('4小時');
+    }
+    if (timeReminders['8h'] && (hours === 0 || hours === 8 || hours === 16) && minutes === 0) {
+        notifyTimeReminder('8小時');
+    }
+}
+
+function notifyTimeReminder(time) {
+    if ("Notification" in window) {
+        Notification.requestPermission().then(function (permission) {
+            if (permission === "granted") {
+                new Notification(`時間提醒`, {
+                    body: `現在是 ${time} 分，您設置了提醒。`,
+                });
+            }
+        });
+    }
+    console.log(`時間提醒: 現在是 ${time} 分`);
+}
+
+loadSavedData();
+updateNextUpdateTime();
+initializeTimeReminders();
+scheduleNextUpdate();
+
+setInterval(() => {
+    updateAllStocks();
+    checkTimeReminders();
+}, 60000);
+</script>
+</body></html>
