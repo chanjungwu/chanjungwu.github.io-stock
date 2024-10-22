@@ -27,7 +27,7 @@
   #new-category-input {
     width: 150px;
   }
-  #add-btn, #add-category-btn, #delete-category-btn, #weekly-btn, #daily-btn, #four-hour-btn, #three-hour-btn, #hourly-btn, #monthly-btn, #delete-duplicates-btn, #paste-btn, #macd-btn, #rsi-btn, #ma610-btn, #clear-indicators-btn {
+  #add-btn, #add-category-btn, #delete-category-btn, #weekly-btn, #daily-btn, #four-hour-btn, #three-hour-btn, #hourly-btn, #monthly-btn, #delete-duplicates-btn, #paste-btn, #macd-btn, #rsi-btn, #ma-btn, #clear-indicators-btn {
     padding: 5px 10px;
     background-color: #238636;
     color: #ffffff;
@@ -35,7 +35,7 @@
     cursor: pointer;
     margin-right: 5px;
   }
-  #macd-btn, #rsi-btn, #ma610-btn {
+  #macd-btn, #rsi-btn, #ma-btn {
     background-color: #ff5fae;
     color: #ffffff;
     border: none;
@@ -135,6 +135,21 @@
   #close-modal-btn {
     background-color: #da3633;
   }
+  #ma-length-input, #rsi-length-input, #macd-fast-length-input, #macd-slow-length-input, #macd-signal-length-input {
+    width: 100px;
+    margin-right: 10px;
+    padding: 5px;
+    background-color: #0d1117;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+  }
+  #ma-length-confirm, #rsi-length-confirm, #macd-length-confirm {
+    padding: 5px 10px;
+    background-color: #238636;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -157,7 +172,7 @@
     <button id="paste-btn">貼入</button>
     <button id="macd-btn">MACD</button>
     <button id="rsi-btn">RSI</button>
-    <button id="ma610-btn">MA610</button>
+    <button id="ma-btn">MA</button>
     <button id="clear-indicators-btn" style="background-color: #da3633;">清除指標</button>
     <button id="export-btn">匯出清單名單</button>
     <button id="import-btn">匯入清單名單</button>
@@ -177,6 +192,32 @@
       <button id="close-modal-btn">關閉</button>
     </div>
   </div>
+  <div id="ma-modal" class="modal">
+    <div class="modal-content">
+      <h2>MA 長度設定</h2>
+      <input type="number" id="ma-length-input" value="610" min="1">
+      <button id="ma-length-confirm">確定</button>
+    </div>
+  </div>
+  <div id="rsi-modal" class="modal">
+    <div class="modal-content">
+      <h2>RSI 長度設定</h2>
+      <input type="number" id="rsi-length-input" value="14" min="1">
+      <button id="rsi-length-confirm">確定</button>
+    </div>
+  </div>
+  <div id="macd-modal" class="modal">
+    <div class="modal-content">
+      <h2>MACD 參數設定</h2>
+      <input type="number" id="macd-fast-length-input" value="12" min="1">
+      <label for="macd-fast-length-input">快線長度</label>
+      <input type="number" id="macd-slow-length-input" value="26" min="1">
+      <label for="macd-slow-length-input">慢線長度</label>
+      <input type="number" id="macd-signal-length-input" value="9" min="1">
+      <label for="macd-signal-length-input">信號線長度</label>
+      <button id="macd-length-confirm">確定</button>
+    </div>
+  </div>
 
   <script>
     let categories = JSON.parse(localStorage.getItem('categories')) || { "default": [] };
@@ -184,15 +225,30 @@
     let selectedStocks = [];
     let widgets = {};
     let currentTimeframe = "W";
-    let macdEnabled = false;
-    let rsiEnabled = false;
-    let ma610Enabled = false;
+    let macdEnabled = JSON.parse(localStorage.getItem('macdEnabled')) || false;
+    let rsiEnabled = JSON.parse(localStorage.getItem('rsiEnabled')) || false;
+    let maEnabled = JSON.parse(localStorage.getItem('maEnabled')) || false;
+    let maLength = parseInt(localStorage.getItem('maLength')) || 610;
+    let rsiLength = parseInt(localStorage.getItem('rsiLength')) || 14;
+    let macdFastLength = parseInt(localStorage.getItem('macdFastLength')) || 12;
+    let macdSlowLength = parseInt(localStorage.getItem('macdSlowLength')) || 26;
+    let macdSignalLength = parseInt(localStorage.getItem('macdSignalLength')) || 9;
 
     function createWidget(container, symbol, interval) {
       const studies = [];
-      if (macdEnabled) studies.push("MACD@tv-basicstudies");
-      if (rsiEnabled) studies.push("RSI@tv-basicstudies");
-      if (ma610Enabled) studies.push({ id: "MASimple@tv-basicstudies", inputs: { length: 610 } });
+      if (macdEnabled) studies.push({
+        id: "MACD@tv-basicstudies",
+        inputs: {
+          fast_length: macdFastLength,
+          slow_length: macdSlowLength,
+          signal_length: macdSignalLength
+        }
+      });
+      if (rsiEnabled) studies.push({
+        id: "RSI@tv-basicstudies",
+        inputs: { length: rsiLength }
+      });
+      if (maEnabled) studies.push({ id: "MASimple@tv-basicstudies", inputs: { length: maLength } });
       return new TradingView.widget({
         "width": "100%",
         "height": "100%",
@@ -380,7 +436,6 @@
       const allStocks = new Set();
       const duplicates = new Set();
 
-      // Find duplicates
       Object.values(categories).forEach(categoryStocks => {
         categoryStocks.forEach(stock => {
           if (allStocks.has(stock)) {
@@ -391,7 +446,6 @@
         });
       });
 
-      // Remove duplicates, keeping at least one instance
       Object.keys(categories).forEach(category => {
         categories[category] = categories[category].filter(stock => {
           if (duplicates.has(stock)) {
@@ -405,7 +459,6 @@
         });
       });
 
-      // Update UI
       updateCategorySelect();
       updateWatchlist();
       selectedStocks = categories[currentCategory].slice(0, 16);
@@ -420,24 +473,63 @@
     }
 
     function toggleMACD() {
-      macdEnabled = !macdEnabled;
-      updateCharts();
+      const modal = document.getElementById('macd-modal');
+      modal.style.display = 'block';
     }
 
     function toggleRSI() {
-      rsiEnabled = !rsiEnabled;
-      updateCharts();
+      const modal = document.getElementById('rsi-modal');
+      modal.style.display = 'block';
     }
-    
-    function toggleMA610() {
-      ma610Enabled = !ma610Enabled;
+
+    function handleRSIInput() {
+      const lengthInput = document.getElementById('rsi-length-input');
+      rsiLength = parseInt(lengthInput.value, 10);
+      rsiEnabled = true;
+      localStorage.setItem('rsiEnabled', JSON.stringify(rsiEnabled));
+      localStorage.setItem('rsiLength', rsiLength.toString());
       updateCharts();
+      document.getElementById('rsi-modal').style.display = 'none';
+    }
+
+    function handleMACDInput() {
+      const fastLengthInput = document.getElementById('macd-fast-length-input');
+      const slowLengthInput = document.getElementById('macd-slow-length-input');
+      const signalLengthInput = document.getElementById('macd-signal-length-input');
+      macdFastLength = parseInt(fastLengthInput.value, 10);
+      macdSlowLength = parseInt(slowLengthInput.value, 10);
+      macdSignalLength = parseInt(signalLengthInput.value, 10);
+      macdEnabled = true;
+      localStorage.setItem('macdEnabled', JSON.stringify(macdEnabled));
+      localStorage.setItem('macdFastLength', macdFastLength.toString());
+      localStorage.setItem('macdSlowLength', macdSlowLength.toString());
+      localStorage.setItem('macdSignalLength', macdSignalLength.toString());
+      updateCharts();
+      document.getElementById('macd-modal').style.display = 'none';
+    }
+
+    function toggleMA() {
+      const modal = document.getElementById('ma-modal');
+      modal.style.display = 'block';
+    }
+
+    function handleMAInput() {
+      const lengthInput = document.getElementById('ma-length-input');
+      maLength = parseInt(lengthInput.value, 10);
+      maEnabled = true;
+      localStorage.setItem('maEnabled', JSON.stringify(maEnabled));
+      localStorage.setItem('maLength', maLength.toString());
+      updateCharts();
+      document.getElementById('ma-modal').style.display = 'none';
     }
 
     function clearIndicators() {
       macdEnabled = false;
       rsiEnabled = false;
-      ma610Enabled = false;
+      maEnabled = false;
+      localStorage.setItem('macdEnabled', JSON.stringify(macdEnabled));
+      localStorage.setItem('rsiEnabled', JSON.stringify(rsiEnabled));
+      localStorage.setItem('maEnabled', JSON.stringify(maEnabled));
       updateCharts();
     }
 
@@ -582,7 +674,10 @@
 
     document.getElementById('macd-btn').addEventListener('click', toggleMACD);
     document.getElementById('rsi-btn').addEventListener('click', toggleRSI);
-    document.getElementById('ma610-btn').addEventListener('click', toggleMA610);
+    document.getElementById('ma-btn').addEventListener('click', toggleMA);
+    document.getElementById('ma-length-confirm').addEventListener('click', handleMAInput);
+    document.getElementById('rsi-length-confirm').addEventListener('click', handleRSIInput);
+    document.getElementById('macd-length-confirm').addEventListener('click', handleMACDInput);
     document.getElementById('clear-indicators-btn').addEventListener('click', clearIndicators);
     document.getElementById('export-btn').addEventListener('click', exportWatchlist);
     document.getElementById('import-btn').addEventListener('click', importWatchlist);
@@ -590,6 +685,15 @@
     window.onclick = (event) => {
       if (event.target == pasteModal) {
         pasteModal.style.display = 'none';
+      }
+      if (event.target == document.getElementById('ma-modal')) {
+        document.getElementById('ma-modal').style.display = 'none';
+      }
+      if (event.target == document.getElementById('rsi-modal')) {
+        document.getElementById('rsi-modal').style.display = 'none';
+      }
+      if (event.target == document.getElementById('macd-modal')) {
+        document.getElementById('macd-modal').style.display = 'none';
       }
     };
 
