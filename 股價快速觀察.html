@@ -27,7 +27,7 @@
   #new-category-input {
     width: 150px;
   }
-  #add-btn, #add-category-btn, #delete-category-btn, #weekly-btn, #daily-btn, #four-hour-btn, #three-hour-btn, #hourly-btn, #monthly-btn, #delete-duplicates-btn, #paste-btn, #macd-btn, #rsi-btn, #ma610-btn, #export-btn, #import-btn {
+  #add-btn, #add-category-btn, #delete-category-btn, #weekly-btn, #daily-btn, #four-hour-btn, #three-hour-btn, #hourly-btn, #monthly-btn, #delete-duplicates-btn, #paste-btn, #macd-btn, #rsi-btn, #ma610-btn, #clear-indicators-btn {
     padding: 5px 10px;
     background-color: #238636;
     color: #ffffff;
@@ -123,17 +123,6 @@
     color: #c9d1d9;
     border: 1px solid #30363d;
   }
-  #import-btn, #close-modal-btn {
-    padding: 5px 10px;
-    margin-right: 10px;
-    background-color: #238636;
-    color: #ffffff;
-    border: none;
-    cursor: pointer;
-  }
-  #close-modal-btn {
-    background-color: #da3633;
-  }
   #export-btn, #import-btn {
     padding: 5px 10px;
     background-color: #238636;
@@ -142,6 +131,9 @@
     cursor: pointer;
     margin-right: 5px;
     float: right;
+  }
+  #close-modal-btn {
+    background-color: #da3633;
   }
 </style>
 </head>
@@ -181,7 +173,7 @@
     <div class="modal-content">
       <h2>貼入股票代號</h2>
       <textarea id="stock-symbols-input" rows="10" cols="50" placeholder="請輸入股票代號，每行一個"></textarea>
-      <button id="import-btn">匯入</button>
+      <button id="paste-import-btn">匯入</button>
       <button id="close-modal-btn">關閉</button>
     </div>
   </div>
@@ -239,7 +231,9 @@
           "mainSeriesProperties.candleStyle.borderUpColor": "#26a69a",
           "mainSeriesProperties.candleStyle.borderDownColor": "#ef5350",
           "mainSeriesProperties.candleStyle.wickUpColor": "#26a69a",
-          "mainSeriesProperties.candleStyle.wickDownColor": "#ef5350"
+          "mainSeriesProperties.candleStyle.wickDownColor": "#ef5350",
+          "symbolWatermarkProperties.transparency": 90,
+          "paneProperties.legendProperties.showSymbolAsDescription": false
         },
         "studies_overrides": {},
         "loading_screen": { "backgroundColor": "#ffffff" },
@@ -554,7 +548,7 @@
 
     const pasteBtn = document.getElementById('paste-btn');
     const pasteModal = document.getElementById('paste-modal');
-    const importBtn = document.getElementById('import-btn');
+    const pasteImportBtn = document.getElementById('paste-import-btn');
     const closeModalBtn = document.getElementById('close-modal-btn');
     const stockSymbolsInput = document.getElementById('stock-symbols-input');
 
@@ -566,7 +560,7 @@
       pasteModal.style.display = 'none';
     });
 
-    importBtn.addEventListener('click', () => {
+    pasteImportBtn.addEventListener('click', () => {
       const symbols = stockSymbolsInput.value.split('\n').map(s => s.trim().toUpperCase()).filter(s => s);
       
       symbols.forEach(symbol => {
