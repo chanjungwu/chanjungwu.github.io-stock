@@ -150,6 +150,42 @@
     border: none;
     cursor: pointer;
   }
+  .stock-context-menu {
+    display: none;
+    position: fixed;
+    background-color: #161b22;
+    border: 1px solid #30363d;
+    z-index: 1000;
+    padding: 5px 0;
+  }
+  .stock-context-menu button {
+    display: block;
+    width: 100%;
+    padding: 8px 15px;
+    border: none;
+    background: none;
+    color: #c9d1d9;
+    cursor: pointer;
+    text-align: left;
+  }
+  .stock-context-menu button:hover {
+    background-color: #1f6feb;
+  }
+  #copy-to-category-btn, #move-to-category-btn {
+    padding: 5px 10px;
+    background-color: #238636;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    margin-right: 5px;
+  }
+  #cancel-transfer-btn {
+    padding: 5px 10px;
+    background-color: #da3633;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -218,6 +254,19 @@
       <button id="macd-length-confirm">確定</button>
     </div>
   </div>
+  <div id="category-transfer-modal" class="modal">
+    <div class="modal-content">
+      <h2>選擇目標分類</h2>
+      <div>
+        <select id="target-category-select"></select>
+      </div>
+      <div style="margin-top: 15px;">
+        <button id="copy-to-category-btn">複製</button>
+        <button id="move-to-category-btn">移動</button>
+        <button id="cancel-transfer-btn">取消</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     let categories = JSON.parse(localStorage.getItem('categories')) || { "default": [] };
@@ -233,6 +282,8 @@
     let macdFastLength = parseInt(localStorage.getItem('macdFastLength')) || 12;
     let macdSlowLength = parseInt(localStorage.getItem('macdSlowLength')) || 26;
     let macdSignalLength = parseInt(localStorage.getItem('macdSignalLength')) || 9;
+
+    let selectedStockForTransfer = null;
 
     function createWidget(container, symbol, interval) {
       const studies = [];
@@ -362,9 +413,54 @@
         }
         
         li.onclick = (event) => selectNearestStocks(event, symbol);
+        li.oncontextmenu = (event) => {
+          event.preventDefault();
+          showTransferModal(symbol);
+        };
         list.appendChild(li);
       });
       localStorage.setItem('categories', JSON.stringify(categories));
+    }
+
+    function showTransferModal(symbol) {
+      selectedStockForTransfer = symbol;
+      const modal = document.getElementById('category-transfer-modal');
+      const select = document.getElementById('target-category-select');
+      
+      // Populate category select
+      select.innerHTML = '';
+      Object.keys(categories).forEach(category => {
+        if (category !== currentCategory) {
+          const option = document.createElement('option');
+          option.value = category;
+          option.textContent = category;
+          select.appendChild(option);
+        }
+      });
+      
+      modal.style.display = 'block';
+    }
+
+    function copyToCategory() {
+      const targetCategory = document.getElementById('target-category-select').value;
+      if (!categories[targetCategory].includes(selectedStockForTransfer)) {
+        categories[targetCategory].push(selectedStockForTransfer);
+        localStorage.setItem('categories', JSON.stringify(categories));
+      }
+      document.getElementById('category-transfer-modal').style.display = 'none';
+    }
+
+    function moveToCategory() {
+      const targetCategory = document.getElementById('target-category-select').value;
+      if (!categories[targetCategory].includes(selectedStockForTransfer)) {
+        categories[targetCategory].push(selectedStockForTransfer);
+        categories[currentCategory] = categories[currentCategory].filter(s => s !== selectedStockForTransfer);
+        selectedStocks = selectedStocks.filter(s => s !== selectedStockForTransfer);
+        localStorage.setItem('categories', JSON.stringify(categories));
+        updateWatchlist();
+        updateCharts();
+      }
+      document.getElementById('category-transfer-modal').style.display = 'none';
     }
 
     function selectNearestStocks(event, clickedSymbol) {
@@ -682,6 +778,12 @@
     document.getElementById('export-btn').addEventListener('click', exportWatchlist);
     document.getElementById('import-btn').addEventListener('click', importWatchlist);
 
+    document.getElementById('copy-to-category-btn').addEventListener('click', copyToCategory);
+    document.getElementById('move-to-category-btn').addEventListener('click', moveToCategory);
+    document.getElementById('cancel-transfer-btn').addEventListener('click', () => {
+      document.getElementById('category-transfer-modal').style.display = 'none';
+    });
+
     window.onclick = (event) => {
       if (event.target == pasteModal) {
         pasteModal.style.display = 'none';
@@ -694,6 +796,9 @@
       }
       if (event.target == document.getElementById('macd-modal')) {
         document.getElementById('macd-modal').style.display = 'none';
+      }
+      if (event.target == document.getElementById('category-transfer-modal')) {
+        document.getElementById('category-transfer-modal').style.display = 'none';
       }
     };
 
