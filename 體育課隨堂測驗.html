@@ -1,0 +1,396 @@
+<html><head><base href="https://%E5%BA%A7%E8%99%9F%E7%9A%84%E8%BC%B8%E5%85%A5%E6%B3%95%E6%98%AF20301%E3%80%8120302...%E4%BE%9D%E6%AD%A4%E9%A1%9E%E6%8E%A8">
+<meta charset="UTF-8">
+<title>課堂互動遊戲</title>
+<style>
+body {
+    font-family: 'Microsoft JhengHei', Arial, sans-serif;
+    background: linear-gradient(45deg, #FF9A9E 0%, #FAD0C4 99%, #FAD0C4 100%);
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.container {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+    width: 80%;
+    max-width: 600px;
+    text-align: center;
+    transform: translateY(0);
+    transition: transform 0.3s ease;
+}
+
+.container:hover {
+    transform: translateY(-5px);
+}
+
+#loginSection {
+    margin-bottom: 20px;
+}
+
+#quizSection {
+    display: none;
+}
+
+.question {
+    margin: 20px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #F5F7FA 0%, #E3E8EF 100%);
+    border-radius: 15px;
+    text-align: left;
+    transition: transform 0.3s ease;
+}
+
+.question:hover {
+    transform: scale(1.02);
+}
+
+button {
+    background: linear-gradient(45deg, #4CAF50, #45a049);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 16px;
+    margin: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(76, 175, 80, 0.4);
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+input {
+    padding: 12px;
+    font-size: 16px;
+    border: 2px solid #ddd;
+    border-radius: 25px;
+    margin: 10px;
+    width: 200px;
+    transition: all 0.3s ease;
+}
+
+input:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.2);
+    outline: none;
+}
+
+.welcome-animation {
+    animation: bounceIn 1s ease-in-out;
+}
+
+@keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.05); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.choice {
+    display: block;
+    margin: 12px 0;
+    padding: 15px;
+    background: white;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid #e9ecef;
+}
+
+.choice:hover {
+    background: #f8f9fa;
+    transform: translateX(10px);
+    border-color: #4CAF50;
+}
+
+.feedback {
+    margin: 15px 0;
+    padding: 15px;
+    border-radius: 12px;
+    display: none;
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.correct {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.incorrect {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    color: #721c24;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+h2 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    position: relative;
+    display: inline-block;
+}
+
+h2::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, #4CAF50, #45a049);
+    border-radius: 2px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <div id="loginSection">
+        <h2>請輸入座號</h2>
+        <input type="text" id="studentId" placeholder="請輸入座號 (例如: 20301)" pattern="^203[0-9]{2}$">
+        <div id="errorMessage" class="error">請輸入正確的座號格式 (20301-20399)</div>
+        <button onclick="login()">確認</button>
+    </div>
+
+    <div id="welcomeSection" style="display: none;" class="welcome-animation">
+        <h2 id="welcomeMessage"></h2>
+        <button onclick="startQuiz()">開始測驗</button>
+    </div>
+
+    <div id="quizSection">
+        <div id="questionContainer"></div>
+        <div id="feedbackContainer" class="feedback"></div>
+        <div id="resultSection">
+            <h2>測驗結束！</h2>
+            <p id="score"></p>
+            <button onclick="restartQuiz()">重新開始</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const students = {
+    "20301": "莊勝尹",
+    "20302": "李侑叡",
+    "20303": "葉宸圻",
+    "20304": "李智宸",
+    "20305": "林宸新",
+    "20306": "許耀靈",
+    "20307": "施予翔",
+    "20308": "侯昱臣",
+    "20309": "劉國緯",
+    "20310": "陳科均",
+    "20311": "黃頤邦",
+    "20312": "黃昱華",
+    "20313": "黃柏淯",
+    "20314": "廖敏睿",
+    "20315": "王佑廷",
+    "20316": "葉芸云",
+    "20317": "陳語潔",
+    "20318": "曾韻安",
+    "20319": "張巧妮",
+    "20320": "施予晴",
+    "20321": "吳馥朵",
+    "20322": "史宸安",
+    "20323": "許愛樂",
+    "20324": "林怡辰",
+    "20325": "楊子靚",
+    "20326": "陳苡甯",
+    "20327": "曾芊穎",
+    "20328": "謝羽菲",
+    "20329": "張庭晞"
+};
+
+const questions = [
+    {
+        question: "跳繩的時候，大手臂要",
+        choices: [
+            "大手臂繞大圈圈",
+            "只有小手臂跟手腕甩繩",
+            "不用甩繩"
+        ],
+        correct: 1,
+        feedback: "正確答案是只有小手臂跟手腕甩繩。這樣的動作可以讓跳繩更有效率，減少體力消耗，也能更好地控制繩子的速度和節奏。"
+    },
+    {
+        question: "跳繩的時候，膝蓋要",
+        choices: [
+            "盡量彎曲",
+            "盡量不要彎曲"
+        ],
+        correct: 1,
+        feedback: "正確答案是盡量不要彎曲。保持膝蓋伸直但不僵硬可以讓跳躍更輕盈有效率，也能減少膝蓋承受的壓力。"
+    },
+    {
+        question: "跳繩的時候，腳掌要",
+        choices: [
+            "整個腳跟落地",
+            "腳跟盡可能不要落地"
+        ],
+        correct: 1,
+        feedback: "正確答案是腳跟盡可能不要落地。這種跳躍方式可以減少衝擊力，提高跳繩的效率，也能降低受傷的風險。"
+    },
+    {
+        question: "賽跑為什麼要用蹲踞式起跑",
+        choices: [
+            "這樣才帥氣",
+            "經過研究這樣起跑比較快速",
+            "比較不會摔倒"
+        ],
+        correct: 1,
+        feedback: "正確答案是經過研究這樣起跑比較快速。蹲踞式起跑能讓選手產生最大的爆發力，並且有最佳的起跑角度，這都是經過科學研究證實的。"
+    },
+    {
+        question: "衝刺跑的時候，胸口的動作是...",
+        choices: [
+            "稍微後仰",
+            "往前傾(像忍者)"
+        ],
+        correct: 0,
+        feedback: "正確答案是稍微後仰。這個姿勢能讓身體保持在最佳的衝刺狀態，有助於發揮最大速度。"
+    },
+    {
+        question: "衝刺跑的時候，腳掌的動作要",
+        choices: [
+            "腳跟著地踩比較穩才會快吧",
+            "腳跟不著地比較快吧"
+        ],
+        correct: 1,
+        feedback: "正確答案是腳跟不著地比較快。這樣可以減少與地面的接觸時間，提高跑步效率，達到更快的速度。"
+    }
+];
+
+let currentQuestion = 0;
+let score = 0;
+let currentStudent = "";
+let hasAnswered = false;
+
+function validateStudentId(studentId) {
+    return /^203[0-9]{2}$/.test(studentId);
+}
+
+function login() {
+    const studentId = document.getElementById("studentId").value;
+    const errorMessage = document.getElementById("errorMessage");
+    
+    if (!validateStudentId(studentId)) {
+        errorMessage.style.display = "block";
+        return;
+    }
+    
+    errorMessage.style.display = "none";
+    
+    if (students[studentId]) {
+        currentStudent = students[studentId];
+        document.getElementById("loginSection").style.display = "none";
+        document.getElementById("welcomeSection").style.display = "block";
+        document.getElementById("welcomeMessage").innerText = `歡迎，${currentStudent}！`;
+    } else {
+        alert("找不到此座號，請重新輸入！");
+    }
+}
+
+function startQuiz() {
+    document.getElementById("welcomeSection").style.display = "none";
+    document.getElementById("quizSection").style.display = "block";
+    document.getElementById("resultSection").style.display = "none";
+    showQuestion();
+}
+
+function showQuestion() {
+    if (currentQuestion < questions.length) {
+        const questionData = questions[currentQuestion];
+        let html = `<div class="question">
+            <h3>${questionData.question}</h3>`;
+        
+        questionData.choices.forEach((choice, index) => {
+            html += `<div class="choice" onclick="selectAnswer(${index})">${choice}</div>`;
+        });
+        
+        if (hasAnswered) {
+            html += `<button onclick="nextQuestion()" style="margin-top: 20px;">下一題</button>`;
+        }
+        
+        html += "</div>";
+        document.getElementById("questionContainer").innerHTML = html;
+        document.getElementById("feedbackContainer").style.display = "none";
+        hasAnswered = false;
+    } else {
+        showResult();
+    }
+}
+
+function selectAnswer(choiceIndex) {
+    if (hasAnswered) return;
+    
+    const questionData = questions[currentQuestion];
+    const feedbackContainer = document.getElementById("feedbackContainer");
+    
+    feedbackContainer.textContent = questionData.feedback;
+    feedbackContainer.className = `feedback ${choiceIndex === questionData.correct ? 'correct' : 'incorrect'}`;
+    feedbackContainer.style.display = "block";
+
+    if (choiceIndex === questionData.correct) {
+        score++;
+    }
+
+    hasAnswered = true;
+    const questionDiv = document.querySelector('.question');
+    questionDiv.innerHTML += `<button onclick="nextQuestion()" style="margin-top: 20px;">下一題</button>`;
+}
+
+function nextQuestion() {
+    currentQuestion++;
+    showQuestion();
+}
+
+function showResult() {
+    document.getElementById("questionContainer").style.display = "none";
+    document.getElementById("resultSection").style.display = "block";
+    const percentage = Math.round((score / questions.length) * 100);
+    document.getElementById("score").innerHTML = 
+        `${currentStudent}，你的得分是：${score}/${questions.length}<br>
+        正確率：${percentage}%`;
+    document.querySelector('#resultSection button').style.display = "block";
+}
+
+function restartQuiz() {
+    currentQuestion = 0;
+    score = 0;
+    hasAnswered = false;
+    document.getElementById("studentId").value = "";
+    document.getElementById("quizSection").style.display = "none";
+    document.getElementById("questionContainer").style.display = "block";
+    document.getElementById("resultSection").style.display = "none";
+    document.getElementById("loginSection").style.display = "block";
+}
+
+document.getElementById("studentId").addEventListener('input', function(e) {
+    const errorMessage = document.getElementById("errorMessage");
+    if (e.target.value.length === 5 && !validateStudentId(e.target.value)) {
+        errorMessage.style.display = "block";
+    } else {
+        errorMessage.style.display = "none";
+    }
+});
+</script>
+</body></html>
